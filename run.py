@@ -4,12 +4,11 @@ import twilio.twiml
 app = Flask(__name__)
 
 @app.route("/", methods=['GET', 'POST'])
-def hello_monkey():
+def root():
     """Respond to incoming requests"""
     resp = twilio.twiml.Response()
-    
-    with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
-    	g.say("press 1 or something")
+    with resp.gather(finishOnKey="*", action="/handle-key", method="POST") as g:
+    	g.say("Play that trill trap shit bro")
 
     return str(resp)
 
