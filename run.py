@@ -1,7 +1,5 @@
 from flask import Flask, request, redirect, send_from_directory
 import twilio.twiml
-#from tables import *
-# import db
 import urllib
 import os
 from pydub import AudioSegment
@@ -9,14 +7,12 @@ import uuid
 
 
 app = Flask(__name__)
-# db = db.DB()
 
 @app.route("/", methods=['GET', 'POST'])
 def root():
     """Respond to incoming requests"""
     resp = twilio.twiml.Response()
     print request.form.get('CallSid')
-#     callid = db.addEntry(Calls(request.form.get('CallSid'), request.form.get('From'), str(list())))
     #print callid
     with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
         g.say("Press anything to beep beep")
@@ -78,7 +74,6 @@ def handle_recording(number):
     resp = twilio.twiml.Response()
     callid = request.form.get('CallSid')
     print callid
-    #     db.updateEntry(Calls, callid, {'recordings': recording_url})
     someSounds = []
     for dirpath, dnames, fnames in os.walk('sounds/tracks'):
         for f in fnames:
