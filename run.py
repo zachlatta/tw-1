@@ -5,19 +5,7 @@ import os
 from pydub import AudioSegment
 import uuid
 
-
 app = Flask(__name__)
-
-@app.route("/", methods=['GET', 'POST'])
-def root():
-    """Respond to incoming requests"""
-    resp = twilio.twiml.Response()
-    print request.form.get('CallSid')
-    #print callid
-    with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
-        g.say("Press anything to beep beep")
-
-    return str(resp)
 
 def _overlayAllSounds(manySounds):
     #If there are no sounds there it should crash lol
@@ -39,10 +27,15 @@ def getSoundFromManySounds(manySoundUrls):
     overlayedsounds = _overlayAllSounds(audiosegments)
     return overlayedsounds
 
-@app.route('/sounds/metronome.mp3')
-def send_metronome():
-    print "yolosweg"
-    return send_from_directory("sounds", "120bpm_click_track.mp3")
+@app.route("/", methods=['GET', 'POST'])
+def root():
+    """Respond to initial call"""
+    resp = twilio.twiml.Response()
+
+    with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
+        g.say("Press anything to beep beep")
+
+    return str(resp)
 
 @app.route("/sounds/out/<f>")
 def send_result(f):
@@ -61,6 +54,7 @@ def handle_key():
         for dirpath, dnames, fnames in os.walk('sounds/tracks'):
             for f in fnames:
                 os.remove(os.path.join(dirpath, f))
+
         resp = twilio.twiml.Response()
         resp.addRedirect("/")
         return str(resp)
@@ -69,11 +63,9 @@ def handle_key():
 @app.route("/handle-recording/<int:number>", methods=['GET', 'POST'])
 def handle_recording(number):
     recording_url = request.values.get("RecordingUrl", None)
-    print recording_url
     urllib.urlretrieve(recording_url, filename="sounds/tracks/" +  str(number) + ".wav")
     resp = twilio.twiml.Response()
     callid = request.form.get('CallSid')
-    print callid
     someSounds = []
     for dirpath, dnames, fnames in os.walk('sounds/tracks'):
         for f in fnames:
@@ -86,7 +78,6 @@ def handle_recording(number):
 
     resp.play("/sounds/out/" + filename)
     resp.addRedirect("/")
-    print recording_url
     return str(resp)
 
 if __name__ == "__main__":
