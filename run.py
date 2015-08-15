@@ -49,12 +49,8 @@ def handle_key():
     digit_pressed = request.values.get('Digits', None)
     if digit_pressed == "1":
         resp = twilio.twiml.Response()
-<<<<<<< HEAD
         # resp.play("http://demo.twilio.com/hellomonkey/monkey.mp3")
         resp.say("beep")
-=======
-        resp.say("beep beep after the tone")
->>>>>>> refs/remotes/origin/master
         resp.record(finishOnKey="*", maxLength="30", action="/handle-recording")
         resp.addRedirect("/")
         return str(resp)
