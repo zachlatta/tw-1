@@ -17,9 +17,8 @@ def hello_monkey():
 def handle_key():
 	digit_pressed = request.values.get('Digits', None)
 	if digit_pressed == "1":
-		resp = twilio.twiml.Response()
-		resp.redirect("http://b9ff5a36.ngrok.io/twl/modified.xml")
-
+		resp = twilio.twiml.Response() 
+                resp.play("http://demo.twilio.com/hellomonkey/monkey.mp3")
 		return str(resp)
 	else:
 		return redirect("/")
