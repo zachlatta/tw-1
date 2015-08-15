@@ -1,5 +1,4 @@
 from flask import Flask, request, redirect, send_from_directory
-from nocache import nocache
 from pydub import AudioSegment
 import os, errno
 import twilio.twiml
