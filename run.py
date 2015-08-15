@@ -1,13 +1,10 @@
 from flask import Flask, request, redirect
 import twilio.twiml
-<<<<<<< HEAD
 from tables import *
 import db
-=======
 import urllib
 import os
 from pydub import AudioSegment
->>>>>>> refs/remotes/origin/master
 
 app = Flask(__name__)
 db = db.DB()
