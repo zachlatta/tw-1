@@ -3,7 +3,7 @@ import twilio.twiml
 import urllib
 import os
 from pydub import AudioSegment
-import uuid
+from nocache import nocache
 
 app = Flask(__name__)
 
@@ -31,15 +31,14 @@ def getSoundFromManySounds(manySoundUrls):
 def root():
     """Respond to initial call"""
     resp = twilio.twiml.Response()
-
-    with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
-        g.say("Press anything to beep beep")
+    resp.gather(numDigits=1, action="/handle-key", method="POST")
 
     return str(resp)
 
-@app.route("/sounds/out/<f>")
-def send_result(f):
-    return send_from_directory("sounds/out", f)
+@app.route("/sounds/out/result.mp3")
+@nocache
+def send_result():
+    return send_from_directory("sounds/out", "result.mp3")
 
 @app.route("/handle-key", methods=['GET', 'POST'])
 def handle_key():
@@ -47,13 +46,14 @@ def handle_key():
 
     if "*" not in digit_pressed:
         resp = twilio.twiml.Response()
-        resp.record(maxLength="4", action="/handle-recording/" + digit_pressed)
+        resp.record(maxLength="4", action="/handle-recording/" + digit_pressed, trim="do-not-trim")
         resp.addRedirect("/")
         return str(resp)
     else:
         for dirpath, dnames, fnames in os.walk('sounds/tracks'):
             for f in fnames:
-                os.remove(os.path.join(dirpath, f))
+                if f != ".gitkeep":
+                    os.remove(os.path.join(dirpath, f))
 
         resp = twilio.twiml.Response()
         resp.addRedirect("/")
@@ -73,10 +73,9 @@ def handle_recording(number):
                 someSounds.append(AudioSegment.from_wav(os.path.join(dirpath, f)))
     overlayedSound = _overlayAllSounds(someSounds)
 
-    filename = str(uuid.uuid4()) + ".mp3"
-    file_handle = overlayedSound.export("./sounds/out/" + filename, format="mp3")
+    file_handle = overlayedSound.export("./sounds/out/result.mp3", format="mp3")
 
-    resp.play("/sounds/out/" + filename)
+    resp.play("/sounds/out/result.mp3")
     resp.addRedirect("/")
     return str(resp)
 
