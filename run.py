@@ -82,7 +82,8 @@ def handle_recording(number):
     someSounds = []
     for dirpath, dnames, fnames in os.walk('sounds/tracks'):
         for f in fnames:
-            someSounds.append(AudioSegment.from_wav(os.path.join(dirpath, f)))
+            if f != ".gitkeep":
+                someSounds.append(AudioSegment.from_wav(os.path.join(dirpath, f)))
     overlayedSound = _overlayAllSounds(someSounds)
 
     filename = str(uuid.uuid4()) + ".mp3"
