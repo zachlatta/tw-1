@@ -5,6 +5,23 @@ import twilio.twiml
 import urllib
 import uuid
 
+
+SOFT_GAIN=-15.0
+NORMAL_GAIN=-7.0
+LOUD_GAIN=-2.0
+
+GAIN_MAPPING = {
+    1: SOFT_GAIN,
+    2: SOFT_GAIN,
+    3: SOFT_GAIN,
+    4: NORMAL_GAIN,
+    5: NORMAL_GAIN,
+    6: NORMAL_GAIN,
+    7: LOUD_GAIN,
+    8: LOUD_GAIN,
+    9: LOUD_GAIN
+}
+
 app = Flask(__name__)
 
 def _overlayAllSounds(manySounds):
@@ -37,6 +54,11 @@ def force_symlink(file1, file2):
 
 def set_most_recent_result(filename):
     force_symlink(filename, "sounds/out/most_recent.mp3")
+
+def adjust_gain(filename, format, gain):
+    sound = AudioSegment.from_file(filename, format=format)
+    adjusted_sound = sound + gain
+    adjusted_sound.export(filename, format=format)
 
 @app.route("/", methods=['GET', 'POST'])
 def root():
@@ -74,7 +96,11 @@ def handle_key():
 @app.route("/handle-recording/<int:number>", methods=['GET', 'POST'])
 def handle_recording(number):
     recording_url = request.values.get("RecordingUrl", None)
-    urllib.urlretrieve(recording_url, filename="sounds/tracks/" +  str(number) + ".wav")
+    filename = "sounds/tracks/" + str(number) + ".wav"
+    urllib.urlretrieve(recording_url, filename=filename)
+
+    adjust_gain(filename, "wav", GAIN_MAPPING.get(number, 0.0))
+
     resp = twilio.twiml.Response()
     callid = request.form.get('CallSid')
     someSounds = []
