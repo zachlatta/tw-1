@@ -64,6 +64,7 @@ def handle_recording():
     db.updateEntry(Calls, callid, {'recordings': recording_url})
     resp.say("this is your tones")
     resp.play(recording_url)
+    resp.addRedirect("/")
     print recording_url
     return str(resp)
 
