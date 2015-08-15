@@ -11,5 +11,9 @@ class Calls(Base):
 	recordings = Column('recordings', Text(), nullable=True)
 
 	def __init__(self, rid, pnum, recordings):
-		pass
-		
+		self.id = rid
+		self.pnum = pnum
+		self.recordings = recordings
+
+	def __repr__(self):
+		return "<Calls(%s,%s,%s)>" % (self.id, self.pnum, self.recordings)
