@@ -1,9 +1,10 @@
 from flask import Flask, request, redirect, send_from_directory
+from nocache import nocache
+from pydub import AudioSegment
+import os, errno
 import twilio.twiml
 import urllib
-import os
-from pydub import AudioSegment
-from nocache import nocache
+import uuid
 
 app = Flask(__name__)
 
@@ -27,18 +28,29 @@ def getSoundFromManySounds(manySoundUrls):
     overlayedsounds = _overlayAllSounds(audiosegments)
     return overlayedsounds
 
+def force_symlink(file1, file2):
+    try:
+        os.symlink(file1, file2)
+    except OSError, e:
+        if e.errno == errno.EEXIST:
+            os.remove(file2)
+            os.symlink(file1, file2)
+
+def set_most_recent_result(filename):
+    force_symlink(filename, "sounds/out/most_recent.mp3")
+
 @app.route("/", methods=['GET', 'POST'])
 def root():
     """Respond to initial call"""
     resp = twilio.twiml.Response()
-    resp.gather(numDigits=1, action="/handle-key", method="POST")
+    with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
+        g.play('/sounds/out/' + os.readlink('sounds/out/most_recent.mp3'))
 
     return str(resp)
 
-@app.route("/sounds/out/result.mp3")
-@nocache
-def send_result():
-    return send_from_directory("sounds/out", "result.mp3")
+@app.route("/sounds/out/<f>")
+def send_result(f):
+    return send_from_directory("sounds/out", f)
 
 @app.route("/handle-key", methods=['GET', 'POST'])
 def handle_key():
@@ -55,10 +67,10 @@ def handle_key():
                 if f != ".gitkeep":
                     os.remove(os.path.join(dirpath, f))
 
+        set_most_recent_result("blank.mp3")
         resp = twilio.twiml.Response()
         resp.addRedirect("/")
         return str(resp)
-
 
 @app.route("/handle-recording/<int:number>", methods=['GET', 'POST'])
 def handle_recording(number):
@@ -73,9 +85,11 @@ def handle_recording(number):
                 someSounds.append(AudioSegment.from_wav(os.path.join(dirpath, f)))
     overlayedSound = _overlayAllSounds(someSounds)
 
-    file_handle = overlayedSound.export("./sounds/out/result.mp3", format="mp3")
+    filename = str(uuid.uuid4()) + ".mp3"
+    file_handle = overlayedSound.export("./sounds/out/" + filename, format="mp3")
+    set_most_recent_result(filename)
 
-    resp.play("/sounds/out/result.mp3")
+    resp.play("/sounds/out/" + filename)
     resp.addRedirect("/")
     return str(resp)
 
