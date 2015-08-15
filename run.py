@@ -1,7 +1,13 @@
 from flask import Flask, request, redirect
 import twilio.twiml
+<<<<<<< HEAD
 from tables import *
 import db
+=======
+import urllib
+import os
+from pydub import AudioSegment
+>>>>>>> refs/remotes/origin/master
 
 app = Flask(__name__)
 db = db.DB()
@@ -18,13 +24,37 @@ def root():
 
     return str(resp)
 
+def _overlayAllSounds(manySounds):
+    #If there are no sounds there it should crash lol
+    combinedsound = manySounds[0] 
+    for sound in manySounds[1:]:
+        combinedsound = sound.overlay(combinedsound)
+    return combinedsound
+
+def _getAudioSegmentsFromUrls(urls):
+    sounds = []
+    for soundUrl in manySoundUrls:
+        urllib.urlretrieve(soundUrl, filename="sounds/" + str(someVal))
+        somesound = AudioSegment.from_file("sounds/" + str(someVal))
+        sounds.append(somesound)
+        someVal += 1
+
+def getSoundFromManySounds(manySoundUrls):
+    audiosegments = _getAudioSegmentsFromUrls(manySoundUrls)
+    overlayedsounds = _overlayAllSounds(audiosegments)
+    return overlayedsounds
+
 @app.route("/handle-key", methods=['GET', 'POST'])
 def handle_key():
     digit_pressed = request.values.get('Digits', None)
     if digit_pressed == "1":
         resp = twilio.twiml.Response()
+<<<<<<< HEAD
         # resp.play("http://demo.twilio.com/hellomonkey/monkey.mp3")
         resp.say("beep")
+=======
+        resp.say("beep beep after the tone")
+>>>>>>> refs/remotes/origin/master
         resp.record(finishOnKey="*", maxLength="30", action="/handle-recording")
         resp.addRedirect("/")
         return str(resp)
@@ -41,6 +71,7 @@ def handle_recording():
     db.updateEntry(Calls, callid, {'recordings': recording_url})
     resp.say("this is your tones")
     resp.play(recording_url)
+    print recording_url
     return str(resp)
 
 if __name__ == "__main__":
