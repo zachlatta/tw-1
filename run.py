@@ -119,14 +119,14 @@ def soundcloud_redirect():
 
 @app.route("/handle-recording/<int:number>/<fromNumber>/<toNumber>", methods=['GET', 'POST'])
 def handle_recording(number,fromNumber, toNumber):
+    resp = twilio.twiml.Response()
+    resp.say("beep")
     recording_url = request.values.get("RecordingUrl", None)
     filename = "sounds/tracks/" + str(number) + ".wav"
     urllib.urlretrieve(recording_url, filename=filename)
 
     adjust_gain(filename, "wav", GAIN_MAPPING.get(number, 0.0))
 
-    resp = twilio.twiml.Response()
-    resp.say("beep")
     callid = request.form.get('CallSid')
     someSounds = []
     for dirpath, dnames, fnames in os.walk('sounds/tracks'):
