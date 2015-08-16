@@ -9,7 +9,7 @@ import soundcloud
 
 
 SOUND_CLOUD_CLIENT_ID = os.environ.get("SC_CID")
-SOUND_CLOUD_CLIENT_ID = os.environ.get("SC_CID")
+SOUND_CLOUD_CLIENT_SECRET = os.environ.get("SC_SECRET")
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
 
