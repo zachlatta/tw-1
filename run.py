@@ -81,7 +81,7 @@ def root():
 @app.route("/loop", methods=['GET', 'POST'])
 def looper():
     resp = twilio.twiml.Response()
-    with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
+    with resp.gather(timeout=300,numDigits=1, action="/handle-key", method="POST") as g:
         g.play('/sounds/out/' + os.readlink('sounds/out/most_recent.mp3'))
 
     return str(resp)
