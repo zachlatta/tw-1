@@ -127,6 +127,15 @@ def handle_recording(number):
         'title': heroku(),
         'asset_data': open('./sounds/out/' + filename, 'rb')
     })
+
+    tracks = map(lambda id: dict(id=id), [track.id])
+
+    playlist = client.get('/me/playlists')[0]
+
+    client.put(playlist.uri, playlist={
+        'tracks': tracks
+    })
+
     print "Yoyoyo! Sick tune got uploaded at: " + track.permalink_url
 
     set_most_recent_result(filename)
