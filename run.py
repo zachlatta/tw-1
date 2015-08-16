@@ -4,8 +4,29 @@ import os, errno
 import twilio.twiml
 import urllib
 import uuid
+import soundcloud
+
+SOUND_CLOUD_CLIENT_ID = "2507d6bf557d8b05247982d81453b6dc"
+SOUND_CLOUD_CLIENT_SECRET = "5e3f30167c57480b45fc77bd6aba3630"
+
+SOFT_GAIN=-15.0
+NORMAL_GAIN=-7.0
+LOUD_GAIN=-2.0
+
+GAIN_MAPPING = {
+    1: SOFT_GAIN,
+    2: SOFT_GAIN,
+    3: SOFT_GAIN,
+    4: NORMAL_GAIN,
+    5: NORMAL_GAIN,
+    6: NORMAL_GAIN,
+    7: LOUD_GAIN,
+    8: LOUD_GAIN,
+    9: LOUD_GAIN
+}
 
 app = Flask(__name__)
+
 
 def _overlayAllSounds(manySounds):
     #If there are no sounds there it should crash lol
@@ -37,6 +58,11 @@ def force_symlink(file1, file2):
 
 def set_most_recent_result(filename):
     force_symlink(filename, "sounds/out/most_recent.mp3")
+
+def adjust_gain(filename, format, gain):
+    sound = AudioSegment.from_file(filename, format=format)
+    adjusted_sound = sound + gain
+    adjusted_sound.export(filename, format=format)
 
 @app.route("/", methods=['GET', 'POST'])
 def root():
@@ -71,10 +97,19 @@ def handle_key():
         resp.addRedirect("/")
         return str(resp)
 
+@app.route('/redirectSoundcloud')
+def soundcloud_redirect():
+    code = requests.values.get("code")
+    access_token = client.exchange_token(code)
+
 @app.route("/handle-recording/<int:number>", methods=['GET', 'POST'])
 def handle_recording(number):
     recording_url = request.values.get("RecordingUrl", None)
-    urllib.urlretrieve(recording_url, filename="sounds/tracks/" +  str(number) + ".wav")
+    filename = "sounds/tracks/" + str(number) + ".wav"
+    urllib.urlretrieve(recording_url, filename=filename)
+
+    adjust_gain(filename, "wav", GAIN_MAPPING.get(number, 0.0))
+
     resp = twilio.twiml.Response()
     callid = request.form.get('CallSid')
     someSounds = []
@@ -83,14 +118,73 @@ def handle_recording(number):
             if f != ".gitkeep":
                 someSounds.append(AudioSegment.from_wav(os.path.join(dirpath, f)))
     overlayedSound = _overlayAllSounds(someSounds)
-
     filename = str(uuid.uuid4()) + ".mp3"
     file_handle = overlayedSound.export("./sounds/out/" + filename, format="mp3")
-    set_most_recent_result(filename)
+    client = soundcloud.Client(username = "t9soundcloud@christran.in",password = "WSHO123!@#", client_id = SOUND_CLOUD_CLIENT_ID, client_secret = SOUND_CLOUD_CLIENT_SECRET)
+    print client
 
+    track = client.post('/tracks', track = {
+        'title': heroku(),
+        'asset_data': open('./sounds/out/' + filename, 'rb')
+    })
+    print "Yoyoyo! Sick tune got uploaded at: " + track.permalink_url
+
+    set_most_recent_result(filename)
     resp.play("/sounds/out/" + filename)
     resp.addRedirect("/")
     return str(resp)
+
+from random import choice
+def heroku(hex=False):
+    # modified by @dentearl https://gist.github.com/3442096
+    # who forked from @hasenj https://gist.github.com/3205543
+    # who forked from: @afriggeri https://gist.github.com/1266756
+    # example output:
+    # 'golden-horizon-2076'
+    adjs = ['afternoon', 'aged', 'ancient', 'autumn', 'billowing',
+    'bitter', 'black', 'blue', 'bold', 'broken',
+    'calm', 'caring', 'cold', 'cool', 'crimson',
+    'damp', 'dark', 'dawn', 'delicate', 'divine',
+    'dry', 'empty', 'ephemeral', 'evening', 'falling',
+    'fathomless', 'floral', 'fragrant', 'frosty', 'golden',
+    'green', 'hidden', 'holy', 'icy', 'imperfect',
+    'impermanent', 'late', 'lingering', 'little', 'lively',
+    'long', 'majestic', 'mindful', 'misty', 'morning',
+    'muddy', 'nameless', 'noble', 'old', 'patient',
+    'polished', 'proud', 'purple', 'quiet', 'red',
+    'restless', 'rough', 'shy', 'silent', 'silvery',
+    'slender', 'small', 'smooth', 'snowy', 'solitary',
+    'sparkling', 'spring', 'stately', 'still', 'strong',
+    'summer', 'timeless', 'twilight', 'unknowable', 'unmovable',
+    'upright', 'wandering', 'weathered', 'white', 'wild',
+    'winter', 'wispy', 'withered', 'young',
+    ]
+    nouns = ['bird', 'breeze', 'brook', 'brook', 'bush',
+    'butterfly', 'chamber', 'chasm', 'cherry', 'cliff',
+    'cloud', 'darkness', 'dawn', 'dew', 'dream',
+    'dust', 'eye', 'feather', 'field', 'fire',
+    'firefly', 'flower', 'foam', 'fog', 'forest',
+    'frog', 'frost', 'glade', 'glitter', 'grass',
+    'hand', 'haze', 'hill', 'horizon', 'lake',
+    'leaf', 'lily', 'meadow', 'mist', 'moon',
+    'morning', 'mountain', 'night', 'paper', 'pebble',
+    'pine', 'planet', 'plateau', 'pond', 'rain',
+    'resonance', 'ridge', 'ring', 'river', 'sea',
+    'shadow', 'shape', 'silence', 'sky', 'smoke',
+    'snow', 'snowflake', 'sound', 'star', 'stream',
+    'sun', 'sun', 'sunset', 'surf', 'thunder',
+    'tome', 'tree', 'violet', 'voice', 'water',
+    'waterfall', 'wave', 'wave', 'wildflower', 'wind',
+    'wood',
+    ]
+    if hex:
+        suffix = '0123456789abcdef'
+    else:
+        suffix = '0123456789'
+        return ('-'.join([choice(adjs), choice(nouns), ''.join(choice(suffix) for x in xrange(4))]))
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
