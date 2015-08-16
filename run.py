@@ -153,7 +153,7 @@ def handle_recording(number,fromNumber, toNumber):
     })
 
     twilioClient = TwilioRestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    sms = twilioCient.sms.messages.create(body =
+    sms = twilioClient.sms.messages.create(body =
                                           "Your sick jam just got uploaded on SoundCloud! Check it out here: " + track.permalink_url, to=fromNumber, from_=toNumber)
     print "Yoyoyo! Sick tune got uploaded at: " + track.permalink_url
     set_most_recent_result(filename)
