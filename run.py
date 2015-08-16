@@ -70,7 +70,15 @@ def root():
     resp = twilio.twiml.Response()
     with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
         # g.play('/sounds/out/' + os.readlink('sounds/out/most_recent.mp3'))
-        g.say("Yo bro please correctly filter the trill trap shit from the non trill trap shit")
+        g.say("Press a number to record a track or press * to clear")
+
+    return str(resp)
+
+@app.route("/loop", methods=['GET', 'POST'])
+def looper():
+    resp = twilio.twiml.Response()
+    with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
+        g.play('/sounds/out/' + os.readlink('sounds/out/most_recent.mp3'))
 
     return str(resp)
 
@@ -84,8 +92,8 @@ def handle_key():
 
     if "*" not in digit_pressed:
         resp = twilio.twiml.Response()
-        resp.record(maxLength="4", action="/handle-recording/" + digit_pressed, trim="do-not-trim")
-        resp.addRedirect("/")
+        resp.record(maxLength="12", action="/handle-recording/" + digit_pressed, trim="do-not-trim")
+        resp.addRedirect("/loop")
         return str(resp)
     else:
         for dirpath, dnames, fnames in os.walk('sounds/tracks'):
@@ -95,7 +103,7 @@ def handle_key():
 
         set_most_recent_result("blank.mp3")
         resp = twilio.twiml.Response()
-        resp.addRedirect("/")
+        resp.addRedirect("/loop")
         return str(resp)
 
 @app.route('/redirectSoundcloud')
@@ -142,7 +150,7 @@ def handle_recording(number):
 
     set_most_recent_result(filename)
     resp.play("/sounds/out/" + filename)
-    resp.addRedirect("/")
+    resp.addRedirect("/loop")
     return str(resp)
 
 from random import choice
