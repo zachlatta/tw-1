@@ -1,13 +1,17 @@
 from flask import Flask, request, redirect, send_from_directory
 from pydub import AudioSegment
+from twilio.rest import TwilioRestClient
 import os, errno
 import twilio.twiml
 import urllib
 import uuid
 import soundcloud
 
+
 SOUND_CLOUD_CLIENT_ID = os.environ.get("SC_CID")
-SOUND_CLOUD_CLIENT_SECRET = os.environ.get("SC_SECRET")
+SOUND_CLOUD_CLIENT_ID = os.environ.get("SC_CID")
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
 
 SOFT_GAIN=-15.0
 NORMAL_GAIN=-7.0
@@ -89,10 +93,12 @@ def send_result(f):
 @app.route("/handle-key", methods=['GET', 'POST'])
 def handle_key():
     digit_pressed = request.values.get('Digits', None)
+    fromNumber = request.form.get("From")
+    toNumber = request.form.get("To")
 
     if "*" not in digit_pressed:
         resp = twilio.twiml.Response()
-        resp.record(maxLength="6", action="/handle-recording/" + digit_pressed, trim="do-not-trim")
+        resp.record(maxLength="6", action="/handle-recording/" + digit_pressed + "/" + str(fromNumber) + "/" + str(toNumber), trim="do-not-trim")
         resp.addRedirect("/loop")
         return str(resp)
     else:
@@ -111,8 +117,8 @@ def soundcloud_redirect():
     code = requests.values.get("code")
     access_token = client.exchange_token(code)
 
-@app.route("/handle-recording/<int:number>", methods=['GET', 'POST'])
-def handle_recording(number):
+@app.route("/handle-recording/<int:number>/<fromNumber>/<toNumber>", methods=['GET', 'POST'])
+def handle_recording(number,fromNumber, toNumber):
     recording_url = request.values.get("RecordingUrl", None)
     filename = "sounds/tracks/" + str(number) + ".wav"
     urllib.urlretrieve(recording_url, filename=filename)
@@ -146,8 +152,10 @@ def handle_recording(number):
         'tracks': tracks
     })
 
+    twilioClient = TwilioRestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    sms = twilioCient.sms.messages.create(body =
+                                          "Your sick jam just got uploaded on SoundCloud! Check it out here: " + track.permalink_url, to=fromNumber, from_=toNumber)
     print "Yoyoyo! Sick tune got uploaded at: " + track.permalink_url
-
     set_most_recent_result(filename)
     resp.play("/sounds/out/" + filename)
     resp.addRedirect("/loop")
