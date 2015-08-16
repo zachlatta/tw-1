@@ -6,8 +6,8 @@ import urllib
 import uuid
 import soundcloud
 
-SOUND_CLOUD_CLIENT_ID = "2507d6bf557d8b05247982d81453b6dc"
-SOUND_CLOUD_CLIENT_SECRET = "5e3f30167c57480b45fc77bd6aba3630"
+SOUND_CLOUD_CLIENT_ID = os.environ.get("SC_CID")
+SOUND_CLOUD_CLIENT_SECRET = os.environ.get("SC_SECRET")
 
 SOFT_GAIN=-15.0
 NORMAL_GAIN=-7.0
@@ -69,7 +69,8 @@ def root():
     """Respond to initial call"""
     resp = twilio.twiml.Response()
     with resp.gather(numDigits=1, action="/handle-key", method="POST") as g:
-        g.play('/sounds/out/' + os.readlink('sounds/out/most_recent.mp3'))
+        # g.play('/sounds/out/' + os.readlink('sounds/out/most_recent.mp3'))
+        g.say("Yo bro please correctly filter the trill trap shit from the non trill trap shit")
 
     return str(resp)
 
@@ -111,6 +112,7 @@ def handle_recording(number):
     adjust_gain(filename, "wav", GAIN_MAPPING.get(number, 0.0))
 
     resp = twilio.twiml.Response()
+    resp.say("beep")
     callid = request.form.get('CallSid')
     someSounds = []
     for dirpath, dnames, fnames in os.walk('sounds/tracks'):
@@ -120,7 +122,7 @@ def handle_recording(number):
     overlayedSound = _overlayAllSounds(someSounds)
     filename = str(uuid.uuid4()) + ".mp3"
     file_handle = overlayedSound.export("./sounds/out/" + filename, format="mp3")
-    client = soundcloud.Client(username = "t9soundcloud@christran.in",password = "WSHO123!@#", client_id = SOUND_CLOUD_CLIENT_ID, client_secret = SOUND_CLOUD_CLIENT_SECRET)
+    client = soundcloud.Client(username = "t9soundcloud@christran.in",password = os.environ.get("SC_PASS"), client_id = SOUND_CLOUD_CLIENT_ID, client_secret = SOUND_CLOUD_CLIENT_SECRET)
     print client
 
     track = client.post('/tracks', track = {
