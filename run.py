@@ -92,7 +92,7 @@ def handle_key():
 
     if "*" not in digit_pressed:
         resp = twilio.twiml.Response()
-        resp.record(maxLength="12", action="/handle-recording/" + digit_pressed, trim="do-not-trim")
+        resp.record(maxLength="6", action="/handle-recording/" + digit_pressed, trim="do-not-trim")
         resp.addRedirect("/loop")
         return str(resp)
     else:
